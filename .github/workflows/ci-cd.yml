@@ -1,0 +1,40 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Check out code
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      # Build Docker image locally (without pushing to Docker Hub)
+      - name: Build Docker image
+        run: |
+          docker build -t wisecow:latest .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Set up kubectl
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v1
+        with:
+          version: 'latest'
+
+      # Deploy to Kubernetes
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s-manifests/deployment.yaml
+          kubectl apply -f k8s-manifests/service.yaml
+          kubectl apply -f k8s-manifests/ingress.yaml
